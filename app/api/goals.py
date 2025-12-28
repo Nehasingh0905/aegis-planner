@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, HTTPException
 from sqlalchemy.orm import Session
 from typing import List
 from uuid import UUID
@@ -16,7 +16,7 @@ SYSTEM_USER_ID = UUID("00000000-0000-0000-0000-000000000001")
 def get_goals(
     db: Session = Depends(get_db)
 ) -> List[GoalResponse]:
-    goals = db.query(Goal).filter(Goal.user_id == SYSTEM_USER_ID).all()
+    goals = db.query(Goal).filter(Goal.user_id == SYSTEM_USER_ID).order_by(Goal.created_at).all()
     return [
         GoalResponse(
             goal_id=goal.id,
@@ -25,6 +25,26 @@ def get_goals(
         )
         for goal in goals
     ]
+
+
+@router.get("/goals/{goal_id}", response_model=GoalResponse)
+def get_goal(
+    goal_id: UUID,
+    db: Session = Depends(get_db)
+) -> GoalResponse:
+    goal = db.query(Goal).filter(
+        Goal.id == goal_id,
+        Goal.user_id == SYSTEM_USER_ID
+    ).first()
+    
+    if not goal:
+        raise HTTPException(status_code=404, detail="Goal not found")
+    
+    return GoalResponse(
+        goal_id=goal.id,
+        raw_text=goal.raw_text,
+        created_at=goal.created_at
+    )
 
 
 @router.post("/goals", response_model=GoalCreateResponse, status_code=201)
