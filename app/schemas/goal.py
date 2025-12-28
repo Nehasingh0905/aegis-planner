@@ -11,3 +11,9 @@ class GoalCreateResponse(BaseModel):
     goal_id: UUID
     created_at: datetime
 
+
+class GoalResponse(BaseModel):
+    goal_id: UUID
+    raw_text: str
+    created_at: datetime
+
